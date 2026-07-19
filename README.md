@@ -52,6 +52,22 @@
 
 ---
 
+## Roadmap — full voice interaction
+
+Planned next: every step of Look / Ask / assist can be done by **voice in and voice out** (hands-free loop), while keeping the same safety gates as today’s UI confirm flow.
+
+| Stage | Voice in | Voice out |
+|-------|----------|-----------|
+| Intent | Speak what you need on this page | — |
+| Analyze / Ask | — | Speak page analysis or the Ask answer |
+| Operate | Speak what to do (triggers plan) | Speak the full click/seek chain before acting |
+| Confirm | Say “confirm” (or cancel) | — |
+| Execute | — | Speak progress / done summary |
+
+Principle: **no silent execute** — the chain is always spoken first; execution starts only after an explicit voice confirmation; completion is spoken as well. Text UI remains available as fallback.
+
+---
+
 ## Install (development)
 
 ```bash
