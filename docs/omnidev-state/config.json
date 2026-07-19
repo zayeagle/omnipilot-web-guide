@@ -1,0 +1,12 @@
+{
+  "interactive_mode": true,
+  "design_split": false,
+  "confirmation_level": "auto",
+  "context_mode": "slim",
+  "sub_agents": "auto",
+  "platform_override": null,
+  "codex_compaction_multiplier": 1.3,
+  "codex_conservative_occupancy": true,
+  "codex_thread_overhead_tokens": 4000,
+  "codex_max_turns_before_compress": 15
+}
