@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "OmniPilot Web Guide"
+  },
+  "extDescription": {
+    "message": "All-in-one page action guidance — detect what a page can do and walk you through it."
+  },
+  "actionTitle": {
+    "message": "Open OmniPilot floating guide"
+  }
+}

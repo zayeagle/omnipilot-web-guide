@@ -1,17 +1,37 @@
 {
-    "events":  [
-                   {
-                       "type":  "requirement_start",
-                       "at":  "2026-07-19T11:19:00+08:00",
-                       "requirement":  "page action guidance browser extension: visual how-to, auto-detect any page, common browsers",
-                       "complexity_proposed":  "M",
-                       "platform":  "cursor",
-                       "estimated_tokens":  0
-                   },
-                   {
-                       "phase":  2,
-                       "type":  "phase_exit",
-                       "at":  "2026-07-19T11:21:30+08:00"
-                   }
-               ]
+  "events": [
+    {
+      "type": "requirement_start",
+      "at": "2026-07-19T11:19:00+08:00",
+      "requirement": "page action guidance browser extension: visual how-to, auto-detect any page, common browsers",
+      "complexity_proposed": "M",
+      "platform": "cursor",
+      "estimated_tokens": 0
+    },
+    {
+      "phase": 2,
+      "type": "phase_exit",
+      "at": "2026-07-19T11:21:30+08:00"
+    },
+    {
+      "phase": 4,
+      "type": "phase_exit",
+      "at": "2026-07-19T11:54:30+08:00",
+      "test_gate": "PASS"
+    },
+    {
+      "phase": 5,
+      "type": "deploy",
+      "at": "2026-07-19T11:56:00+08:00",
+      "deploy_modes": ["binary", "docker", "k8s"],
+      "deploy_autonomy": "conservative",
+      "default_mode": "binary",
+      "dry_run": "PASS"
+    },
+    {
+      "phase": 5,
+      "type": "phase_exit",
+      "at": "2026-07-19T11:56:30+08:00"
+    }
+  ]
 }

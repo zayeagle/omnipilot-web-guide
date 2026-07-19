@@ -1,86 +1,85 @@
 ---
-version: 1
+version: 2
+previous_version: 1
 artifact: 04-design.md
 complexity: M
-last_updated: 2026-07-19T11:21:00+08:00
+last_updated: 2026-07-19T11:26:00+08:00
 history_ref: 04-design-history.md
 ---
 
-# Design — omnipilot-web-guide MVP
+# Design — omnipilot-web-guide MVP (v2)
+
+CHANGE_LOG: v2 — multi-provider + security (align lingua-bridge); chat-only providers
 
 ## Feature F1: Extension shell (WXT)
 ### Business Context
-- **Related**: sibling `omnipilot-lingua-bridge` (WXT layout)
-- **Impact**: installable Chrome/Edge (+ Firefox build path); Side Panel + content + background messaging
+- **Related**: `omnipilot-lingua-bridge` layout/messaging patterns
+- **Impact**: Chrome/Edge + Firefox build; Side Panel; `security.*` + analyze/guide messages
 
 ### Implementation Logic
-1. Scaffold WXT+TS: `entrypoints/{background,content,sidepanel,options}`, `wxt.config.ts`, locales, icons.
-2. Manifest: `storage`, `activeTab`, `sidePanel`, `scripting`; host as needed for analysis; gecko id for Firefox.
-3. Message bus: `analyze.page` / `guide.highlight` / `guide.tour` / `settings.*` via background router.
-4. Align scripts with sibling: `dev`, `build`, `build:firefox`, `test`, `ci`.
+1. WXT+TS scaffold: background/content/sidepanel/options; locales; icons.
+2. Permissions: `storage`, `activeTab`, `sidePanel`, `scripting`; host for page analysis.
+3. Message bus: `analyze.*`, `guide.*`, `settings.*`, `security.*`; `sender.id === runtime.id` for privileged ops.
+4. Scripts/ci align sibling (`assert:content` no secrets in content bundle).
 
 ### Edge Cases
-- Happy: load extension → open side panel | Err: no active tab | Boundary: restricted chrome:// pages skip inject
+- Happy: load → side panel | Err: chrome:// skip | Boundary: wrong sender → deny security
 
 ### Data Changes
 | Entity | Change | Details |
-| entrypoints/* | new | WXT shells |
-| wxt.config.ts | new | manifest + permissions |
+| entrypoints/*, wxt.config | new | shell + gecko id |
 
 ## Feature F2: Rule scanner
 ### Business Context
-- **Related**: F3 AI, F4 guide
-- **Impact**: offline candidate list for any page; input to AI + fallback labels
+- **Related**: F3/F4
+- **Impact**: offline candidates; AI input + rules fallback labels
 
 ### Implementation Logic
-1. Content script `lib/scanner`: walk interactive nodes (button/a/input/select/role/cursor).
-2. Filter: hidden, tiny, decorative; dedupe; cap 40–80; prefer viewport.
-3. Emit `Candidate[]`: uid, tag, role, text, aria, nearby heading, rect, kind.
-4. Re-scan on SPA hint (popstate / major DOM mutate debounced) when panel open.
+1. Scan interactive nodes; filter hidden/tiny; dedupe; cap 40–80; viewport-first.
+2. `Candidate[]` with uid/rect/text/aria/kind; top-level frame only MVP.
+3. Debounced re-scan when panel open (SPA).
 
 ### Edge Cases
-- Happy: form page → candidates | Err: empty body | Boundary: iframe (top-level only MVP)
+- Happy: form → candidates | Err: empty | Boundary: 200 nodes → cap
 
 ### Data Changes
 | Entity | Change | Details |
-| lib/scanner/* | new | pure TS, unit-testable |
+| lib/scanner/* | new | pure TS |
 
-## Feature F3: AI interpret + settings + cache
+## Feature F3: Multi-provider AI + security + cache
 ### Business Context
-- **Related**: F2 candidates, F4 display
-- **Impact**: named features + howTo steps; degrade to rules if no key / API fail
+- **Related**: lingua-bridge `providers`, vault, `key-session`, `security-client`
+- **Impact**: Chat interpret via many vendors; secrets never in content; fail-closed when locked
 
 ### Implementation Logic
-1. Options: API Base URL, model, API key → `chrome.storage.local` only.
-2. Background: redact candidates → OpenAI-compatible chat → JSON schema validate (uid must exist).
-3. Cache by `origin+path+structureFingerprint`; TTL/invalidate on re-analyze.
-4. Fail-closed secrets: never put key in content script; sanitize errors.
+1. **Providers** (chat-focused): OpenAI, DeepSeek, Anthropic(via OpenRouter), OpenRouter, Custom — presets for baseURL + model lists (no STT/TTS required).
+2. **Settings**: provider + baseURL + model + key; optional hardening passphrase → encrypt vault (SW).
+3. **SW session**: unlock fills in-memory key; options uses `security.*` only (no options-world vault SSOT).
+4. **resolveAiConfigForRequest**: `locked` / `missing_key` → no network with secrets; rules fallback OK when missing_key.
+5. Redact password values from candidates; `sanitizeErrorMessage`; cache by origin+path+fingerprint.
 
 ### Edge Cases
-- Happy: key set → features JSON | Err: 401/timeout → rules fallback | Boundary: empty howTo → template steps
+- Happy: unlock → AI features | Err: hardened+locked → explicit unlock | Boundary: custom baseURL
 
 ### Data Changes
 | Entity | Change | Details |
-| lib/ai/*, settings-store | new | SW-only network |
-| storage | settings + cache | local |
+| lib/providers, storage, settings-store, key-session, security-client, ai/* | new | SW-only secrets |
 
 ## Feature F4: Guidance UX
 ### Business Context
 - **Related**: F2/F3 results
-- **Impact**: 图文列表 + 高亮 + 分步 Tour
+- **Impact**: 图文列表 + spotlight tour
 
 ### Implementation Logic
-1. Side Panel: pageSummary, feature list (name/desc/thumb optional), Analyze / Tour.
-2. Content: spotlight overlay (Shadow DOM), scrollIntoView, step through howTo + relatedUids.
-3. Optional: `captureVisibleTab` crop by rect for thumbs (off by default if privacy).
-4. Click list item → highlight; Tour next/skip/end.
+1. Side Panel: summary, list, Analyze/Tour; never displays raw API key.
+2. Shadow DOM overlay; scroll + steps; thumbs optional/off default.
 
 ### Edge Cases
-- Happy: click feature → highlight | Err: uid detached → re-scan tip | Boundary: scrollable overflow
+- Happy: highlight | Err: detached uid | Boundary: tour end
 
 ### Data Changes
 | Entity | Change | Details |
-| sidepanel/*, lib/guide/* | new | overlay + messaging |
+| sidepanel/*, lib/guide/* | new | guide UX |
 
 ## Out of scope (MVP)
-- Safari; deep iframe scan; user correction training; local LLM; auto-submit forms
+- Safari; deep iframe; STT/TTS; iFlytek stack; local LLM; auto-submit forms; passphrase auto-unlock from disk

@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "OmniPilot 页面引导"
+  },
+  "extDescription": {
+    "message": "全能页面操作引导助手：识别页面功能并分步指导操作。"
+  },
+  "actionTitle": {
+    "message": "打开 OmniPilot 浮动引导"
+  }
+}

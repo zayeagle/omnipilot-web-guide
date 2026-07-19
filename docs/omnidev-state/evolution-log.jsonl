@@ -1,2 +1,6 @@
 {"at":"2026-07-19T11:19:00+08:00","phase":0,"type":"domain_knowledge","summary":"OmniPilot greenfield page-guide; stack align lingua-bridge WXT; rules+AI+Side Panel"}
 {"at":"2026-07-19T11:21:30+08:00","phase":2,"type":"domain_knowledge","summary":"MVP features F1 shell F2 scanner F3 AI+cache F4 guide; test profile frontend-only-M"}
+{"at":"2026-07-19T11:30:00+08:00","phase":3,"type":"domain_knowledge","summary":"Synced multi-provider+security into plan v2; G1 WXT shell builds; secrets stay out of content"}
+{"at":"2026-07-19T11:52:00+08:00","phase":3,"type":"domain_knowledge","summary":"Phase3 complete: multi-provider+vault+guide; security audit PASS; ci chrome+firefox"}
+{"at":"2026-07-19T11:54:30+08:00","phase":4,"type":"domain_knowledge","summary":"Phase4 PASS: vitest22 e2e2 assert:content; E2E scaffold only without load-extension"}
+{"at":"2026-07-19T11:56:30+08:00","phase":5,"type":"domain_knowledge","summary":"Phase5: binary pack via deploy.mjs; docker/k8s stubs; Windows uses npm run deploy"}

@@ -1,0 +1,108 @@
+:root {
+  --bg: #f3f1ec;
+  --bg2: #e7ebe6;
+  --ink: #14231a;
+  --muted: #5c6b62;
+  --accent: #1b4332;
+  --line: rgba(20, 35, 26, 0.12);
+}
+
+body {
+  font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Segoe UI Variable", sans-serif;
+  margin: 0;
+  padding: 24px;
+  background:
+    radial-gradient(100% 80% at 0% 0%, #d8f3dc 0%, transparent 50%),
+    linear-gradient(165deg, var(--bg), var(--bg2));
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 520px;
+}
+
+.opg-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: var(--accent);
+  color: #f6fff8;
+  font-weight: 650;
+  cursor: pointer;
+  font: inherit;
+}
+.opg-btn.ghost {
+  background: rgba(27, 67, 50, 0.12);
+  color: var(--accent);
+}
+
+.opg-settings-title-lg {
+  font-family: "Iowan Old Style", "Palatino Linotype", "Songti SC", Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.opg-settings-note {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 6px 0 10px;
+  line-height: 1.45;
+}
+.opg-settings-label {
+  display: block;
+  margin: 12px 0;
+  font-size: 0.9rem;
+}
+.opg-settings-field {
+  display: block;
+  width: min(480px, 100%);
+  margin-top: 4px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  box-sizing: border-box;
+}
+.opg-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  font-size: 0.9rem;
+}
+.opg-settings-risk {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #c47b2b;
+  border-radius: 10px;
+  background: #fff7eb;
+  color: #6a3b0c;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  max-width: 480px;
+}
+.opg-settings-risk[hidden] {
+  display: none !important;
+}
+.opg-vault {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line, #d8ddd4);
+  border-radius: 10px;
+  background: #f7f8f6;
+  max-width: 480px;
+}
+.opg-vault[hidden] {
+  display: none !important;
+}
+.opg-vault-actions[hidden] {
+  display: none !important;
+}
+.opg-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}

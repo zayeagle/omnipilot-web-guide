@@ -1,0 +1,13 @@
+node_modules
+.output
+.wxt
+.tmp
+dist
+*.local
+.DS_Store
+*.log
+web-ext-artifacts
+test-results
+playwright-report
+.env
+.env.*
