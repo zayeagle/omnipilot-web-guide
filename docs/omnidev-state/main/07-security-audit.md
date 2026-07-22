@@ -1,36 +1,26 @@
 ---
-requirement_id: omnipilot-web-guide-mvp
+requirement_id: interpret-sse-parse-fix
 iteration: 1
 status: PASS
 blocking_open: 0
-git_tip: 05fe310+uncommitted
-audited_at: 2026-07-19T11:51:00+08:00
+git_tip: e43b3f7+uncommitted
+audited_at: 2026-07-22T17:07:00+08:00
 ---
 
 # Security Audit
 
 ## Summary
-- Scope: G1–G5 extension sources (`entrypoints/`, `lib/`, `scripts/`, configs)
-- Tools: checklist + `npm run assert:content` (PASS)
+- Scope: `lib/ai/interpret.ts`, `lib/ai/interpret.test.ts`
+- Tools: checklist + `npm run assert:content` + `npm run ci`
 - Result: **PASS**
-- Iteration: 1 / 3
 
 ## Findings
-| ID | Sev | File | Issue | Remediation |
-|----|-----|------|-------|-------------|
-| S1 | — | — | No hardcoded API keys/tokens in source | OK |
-| S2-01 | INFO | sidepanel/options/spotlight | Static `innerHTML` templates; dynamic text via `textContent` | Accept — no user HTML injection path |
-| S3 | — | background `security.*` | `sender.id === runtime.id` && no tab | OK |
-| S4 | — | — | No eval / unsafe exec | OK |
-| S5 | — | storage/crypto-key | https-only Base URL; PBKDF2 100k + AES-GCM vault | OK |
-| S6 | — | ai/sanitize, assert:content | Error redact; content bundle secret scan | OK |
-| S7-01 | MEDIUM | npm transitive | Known npm audit advisories in toolchain (WXT/deps) | Track; not introduced secrets; `npm audit` on CI later |
-| S8 | — | — | No project SAST configured | checklist-only |
-
-## Tools
-- `npm run assert:content` → exit 0
-- Manual checklist S1–S8 on touched paths
-- `npm audit` (informational): transitive vulns in tooling — not FAIL per default MEDIUM policy
+| ID | Sev | Issue | Remediation |
+|----|-----|-------|-------------|
+| S1 | — | No secrets | OK |
+| S2 | — | SSE/JSON parse of model body only; still uses extractJson + parseInterpretPayload | OK |
+| S3–S6 | — | No privileged surface change | OK |
+| S7 | — | No new deps | OK |
 
 ## Decision
-- passed — no CRITICAL/HIGH open; MEDIUM npm advisories documented
+- passed

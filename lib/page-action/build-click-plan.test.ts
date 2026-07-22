@@ -37,4 +37,25 @@ describe('buildClickPlan', () => {
       }),
     ).toBeNull();
   });
+
+  it('does not expand howTo into extra clicks for a clear single goal', () => {
+    const plan = buildClickPlan({
+      goal: '打开数据库配置',
+      features: [
+        {
+          uid: 'c1',
+          name: '数据库配置',
+          description: '进入数据库配置',
+          howTo: ['点击数据库配置', '点击公共配置'],
+        },
+      ],
+      candidates: [
+        { uid: 'c1', text: '数据库配置', ariaLabel: '' },
+        { uid: 'c2', text: '公共配置', ariaLabel: '' },
+      ],
+      locale: 'zh',
+    });
+    expect(plan?.steps).toHaveLength(1);
+    expect(plan?.steps[0]).toMatchObject({ kind: 'click', uid: 'c1' });
+  });
 });

@@ -4,3 +4,5 @@
 {"at":"2026-07-19T11:52:00+08:00","phase":3,"type":"domain_knowledge","summary":"Phase3 complete: multi-provider+vault+guide; security audit PASS; ci chrome+firefox"}
 {"at":"2026-07-19T11:54:30+08:00","phase":4,"type":"domain_knowledge","summary":"Phase4 PASS: vitest22 e2e2 assert:content; E2E scaffold only without load-extension"}
 {"at":"2026-07-19T11:56:30+08:00","phase":5,"type":"domain_knowledge","summary":"Phase5: binary pack via deploy.mjs; docker/k8s stubs; Windows uses npm run deploy"}
+{"at":"2026-07-21T17:46:30+08:00","phase":3,"type":"domain_knowledge","summary":"Toolbar pin not controllable via extension API; document + empty-state tip; compact float defaults"}
+{"at":"2026-07-22T17:07:00+08:00","phase":3,"type":"error_resolution","summary":"Interpret must accept SSE bodies; gateways may stream despite stream:false"}

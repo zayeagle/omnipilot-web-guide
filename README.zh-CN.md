@@ -14,7 +14,7 @@
 | **能力** | 规则扫描 · AI 解读 · 浮层面板 · 高亮导览 |
 | **模型** | OpenAI / DeepSeek / Anthropic(经 OpenRouter) / OpenRouter / 自定义 |
 | **安全** | 可选口令保险库 · 仅 SW 解锁 · 密钥不进 content script |
-| **版本** | **v0.1.24** |
+| **版本** | **v0.1.26** |
 
 ---
 
@@ -78,7 +78,9 @@ npm run dev:firefox  # Firefox
 
 在浏览器中加载 `.output/chrome-mv3`（或 Firefox 产物）未打包扩展。
 
-点击工具栏图标打开**可拖拽浮层面板**（分析 + 问一问）。界面与 AI 回复随浏览器语言（中 / 英）。
+点击扩展图标打开**可拖拽浮层面板**（分析 + 问一问）。界面与 AI 回复随浏览器语言（中 / 英）。
+
+**工具栏固定**：是否把图标钉在地址栏旁由 Chrome / Edge 与用户决定，扩展**无法**设置「安装后默认不固定」。安装后请打开右上角「扩展程序」（拼图）菜单，需要时常显时再手动点图钉固定。
 
 **设置**：面板内齿轮（或扩展选项页）→ 服务商 → API Key → 可选口令加密 → 可选代为点击。
 
@@ -101,6 +103,9 @@ node scripts/capture-readme-shots.mjs
 | `npm test` | Vitest 单测 |
 | `npm run test:e2e` | Playwright 冒烟 |
 | `npm run ci` | 测试 + 构建 + 断言 + Firefox |
+| `npm run bump` | patch 版本 +1（`package.json` / lock / README） |
+| `npm run pack` | **默认先 bump 再打包** Chrome / Firefox zip |
+| `npm run pack:all` | icons + 测试 + bump + zip（仅明确要求时用 `--no-bump`） |
 | `npm run deploy` | CI + 打包 zip（见 `deploy/README.md`） |
 
 ---

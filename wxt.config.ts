@@ -1,5 +1,4 @@
 import { defineConfig } from 'wxt';
-import pkg from './package.json';
 
 export default defineConfig({
   modules: [],
@@ -7,7 +6,7 @@ export default defineConfig({
     name: '__MSG_extName__',
     description: '__MSG_extDescription__',
     default_locale: 'en',
-    version: pkg.version,
+    // version comes from package.json (WXT default)
     permissions: ['storage', 'tabs', 'activeTab', 'scripting', 'sidePanel'],
     host_permissions: ['<all_urls>'],
     icons: {

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { Candidate } from '../scanner';
-import { parseInterpretPayload } from './interpret';
+import {
+  completionContentFromBody,
+  looksLikeSseBody,
+  parseInterpretPayload,
+} from './interpret';
 
 const candidates: Candidate[] = [
   {
@@ -53,5 +57,33 @@ describe('parseInterpretPayload', () => {
     );
     expect(r.degraded).toBe(true);
     expect(r.features.every((f) => f.uid !== 'c99')).toBe(true);
+  });
+});
+
+describe('completionContentFromBody', () => {
+  it('parses non-stream chat completions JSON', () => {
+    const body = JSON.stringify({
+      choices: [{ message: { content: '{"pageSummary":"ok"}' } }],
+    });
+    expect(looksLikeSseBody(body)).toBe(false);
+    expect(completionContentFromBody(body)).toBe('{"pageSummary":"ok"}');
+  });
+
+  it('assembles SSE deltas (gateway stream despite stream:false)', () => {
+    const body = [
+      'data: {"choices":[{"delta":{"content":"{\\"page"}}]}',
+      'data: {"choices":[{"delta":{"content":"Summary\\":\\"hi\\"}"}}]}',
+      'data: [DONE]',
+      '',
+    ].join('\n');
+    expect(looksLikeSseBody(body)).toBe(true);
+    expect(completionContentFromBody(body)).toBe('{"pageSummary":"hi"}');
+  });
+
+  it('matches the reported Unexpected token d failure shape', () => {
+    const body =
+      'data: {"model":"x","choices":[{"delta":{"content":"{\\"a\\":1}"}}]}\n\ndata: [DONE]\n';
+    expect(() => JSON.parse(body)).toThrow(/Unexpected token/);
+    expect(completionContentFromBody(body)).toBe('{"a":1}');
   });
 });

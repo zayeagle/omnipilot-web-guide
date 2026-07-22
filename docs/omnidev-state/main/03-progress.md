@@ -37,5 +37,17 @@
 ## Phase 4
 - ✅ Test report PASS · vitest 22 · e2e 2 · assert:content · 2026-07-19
 
+## Fix 2026-07-22 (interpret SSE)
+- ✅ completionContentFromBody + stream:false · lib/ai/interpret.ts,interpret.test.ts · 2026-07-22
+- unit_tests: SSE + JSON body paths (49 total)
+- 🔒 Security audit · PASS · npm run ci green
+
+## UX patch 2026-07-21 (toolbar pin + empty state)
+- ✅ empty-state + compact float · mount-guide-ui,guide-styles,float-panel,locale · 2026-07-21
+- ✅ README pin note (Chrome cannot default-unpin) · README.md,README.zh-CN.md
+- unit_tests: locale empty/pin strings
+- 🔒 Security audit · iter 1 · PASS · blocking=0
+- npm run ci green · pack chrome/firefox zip ok
+
 ## Phase 5
 - ✅ Deploy assets · binary dry-run PASS · docker/k8s stubs · 06-release-notes · 2026-07-19

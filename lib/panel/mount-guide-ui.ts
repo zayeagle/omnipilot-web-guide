@@ -10,6 +10,7 @@ import {
   forbiddenPageActionRefusal,
   isAssistRequest,
 } from '../ai/chat-policy';
+import { resolveOperateGoal } from '../ai/operate-goal';
 import type { ChatTurn } from '../ai/chat';
 import type { ClickPlan } from '../page-action/build-click-plan';
 import { getSettings } from '../settings-store';
@@ -63,9 +64,11 @@ export function mountGuideUi(
     </div>
     <div class="opg-toolbar">
       <button type="button" class="opg-btn" data-role="analyze">${t.analyze}</button>
-      <button type="button" class="opg-btn" data-role="tour" disabled>${t.startTour}</button>
-      <button type="button" class="opg-btn ghost" data-role="next" disabled>${t.next}</button>
-      <button type="button" class="opg-btn ghost" data-role="end" disabled>${t.end}</button>
+      <div class="opg-tour-controls" data-role="tour-controls" hidden>
+        <button type="button" class="opg-btn" data-role="tour" disabled>${t.startTour}</button>
+        <button type="button" class="opg-btn ghost" data-role="next" disabled>${t.next}</button>
+        <button type="button" class="opg-btn ghost" data-role="end" disabled>${t.end}</button>
+      </div>
     </div>
     <div class="opg-tabs">
       <button type="button" class="opg-tab active" data-tab="guide">${t.tabGuide}</button>
@@ -73,6 +76,14 @@ export function mountGuideUi(
     </div>
     <div class="opg-body">
       <div data-pane="guide">
+        <div class="opg-empty" data-role="empty">
+          <div class="opg-empty-title">${t.emptyTitle}</div>
+          <div class="opg-empty-steps">
+            <div class="opg-empty-step"><span class="opg-empty-n">1</span><span>${t.emptyStepAnalyze}</span></div>
+            <div class="opg-empty-step"><span class="opg-empty-n">2</span><span>${t.emptyStepAsk}</span></div>
+          </div>
+          <div class="opg-empty-pin">${t.pinTip}</div>
+        </div>
         <div class="opg-summary" data-role="summary"></div>
         <div class="opg-list" data-role="list"></div>
       </div>
@@ -95,6 +106,10 @@ export function mountGuideUi(
   const statusEl = root.querySelector<HTMLElement>('[data-role="status"]')!;
   const summaryEl = root.querySelector<HTMLElement>('[data-role="summary"]')!;
   const listEl = root.querySelector<HTMLElement>('[data-role="list"]')!;
+  const emptyEl = root.querySelector<HTMLElement>('[data-role="empty"]')!;
+  const tourControls = root.querySelector<HTMLElement>(
+    '[data-role="tour-controls"]',
+  )!;
   const tourBtn = root.querySelector<HTMLButtonElement>('[data-role="tour"]')!;
   const nextBtn = root.querySelector<HTMLButtonElement>('[data-role="next"]')!;
   const endBtn = root.querySelector<HTMLButtonElement>('[data-role="end"]')!;
@@ -106,6 +121,11 @@ export function mountGuideUi(
     '[data-role="settings-pane"]',
   )!;
 
+  function setGuideEmpty(show: boolean) {
+    emptyEl.hidden = !show;
+    tourControls.hidden = show || features.length === 0;
+  }
+
   let features: Feature[] = [];
   let pageSummary = '';
   let touring = false;
@@ -116,8 +136,14 @@ export function mountGuideUi(
   let pendingPlan: ClickPlan | null = null;
   /** One-time SW plan token — execute sends token only, never client steps. */
   let pendingToken: string | null = null;
-  let lastUserGoal = '';
+  /** Sticky page-action intent — not overwritten by chat complaints. */
+  let operateGoal = '';
   const CONFIRM_UNLOCK_MS = 900;
+
+  function rememberOperateGoal(message: string): string {
+    operateGoal = resolveOperateGoal(message, operateGoal);
+    return operateGoal;
+  }
 
   async function refreshPermissions() {
     try {
@@ -262,6 +288,7 @@ export function mountGuideUi(
 
   function setTouring(on: boolean) {
     touring = on;
+    tourControls.hidden = features.length === 0;
     tourBtn.disabled = !features.length || on;
     nextBtn.disabled = !on;
     endBtn.disabled = !on;
@@ -279,6 +306,7 @@ export function mountGuideUi(
 
   function renderFeatures() {
     listEl.innerHTML = '';
+    setGuideEmpty(features.length === 0 && !summaryEl.textContent);
     for (const f of features) {
       const card = document.createElement('div');
       card.className = 'opg-card';
@@ -440,6 +468,7 @@ export function mountGuideUi(
       summaryEl.textContent = '';
       features = [];
       pageSummary = '';
+      setGuideEmpty(true);
       setTouring(false);
       try {
         const res = (await browser.runtime.sendMessage({
@@ -454,6 +483,7 @@ export function mountGuideUi(
         };
         if (!res?.ok) {
           statusEl.textContent = res?.error || t.analyzeFailed;
+          setGuideEmpty(true);
           return;
         }
         features = res.features || [];
@@ -461,11 +491,12 @@ export function mountGuideUi(
         summaryEl.textContent =
           pageSummary + (res.degraded ? ` · ${t.rulesMode}` : '');
         renderFeatures();
-        tourBtn.disabled = features.length === 0;
+        setTouring(false);
         statusEl.textContent = t.featuresCount(features.length);
         switchTab('guide');
       } catch (e) {
         statusEl.textContent = e instanceof Error ? e.message : String(e);
+        setGuideEmpty(true);
       }
     })();
   });
@@ -540,12 +571,12 @@ export function mountGuideUi(
       }
 
       if (isAssistRequest(actionKind)) {
-        lastUserGoal = question;
-        await presentOperatePlan(question);
+        const goal = rememberOperateGoal(question);
+        await presentOperatePlan(goal || question);
         return;
       }
 
-      lastUserGoal = question;
+      rememberOperateGoal(question);
       statusEl.textContent = t.chatThinking;
       sendBtn.disabled = true;
 
@@ -578,13 +609,14 @@ export function mountGuideUi(
           port.disconnect();
           if (activePort === port) activePort = null;
           void refreshPermissions().then(() => {
-            if (!allowAssistedClick || !lastUserGoal) return;
+            if (!allowAssistedClick || !operateGoal) return;
+            const goalForPlan = operateGoal;
             appendChatActions([
               {
                 label: t.helpOperate,
                 primary: true,
                 onClick: () => {
-                  void presentOperatePlan(lastUserGoal);
+                  void presentOperatePlan(goalForPlan);
                 },
               },
             ]);

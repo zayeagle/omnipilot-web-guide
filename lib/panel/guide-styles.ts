@@ -37,8 +37,8 @@ export const GUIDE_STYLES = `
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: 10px;
+  padding: 10px 14px;
   cursor: default;
   user-select: none;
   border-bottom: 1px solid var(--line);
@@ -79,7 +79,7 @@ export const GUIDE_STYLES = `
   margin: 0;
   padding: 0;
   font-family: "Iowan Old Style", "Palatino Linotype", "Songti SC", Georgia, serif;
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.2;
   letter-spacing: -0.02em;
   font-weight: 700;
@@ -90,7 +90,7 @@ export const GUIDE_STYLES = `
   margin: 0;
   padding: 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.3;
   font-weight: 500;
 }
@@ -113,16 +113,25 @@ export const GUIDE_STYLES = `
 .opg-toolbar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  padding: 12px 16px 8px;
+  padding: 10px 14px 6px;
+}
+.opg-tour-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.opg-tour-controls[hidden] {
+  display: none !important;
 }
 
 .opg-btn {
   border: 0;
   border-radius: 999px;
-  padding: 10px 16px;
+  padding: 8px 14px;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
   background: var(--accent);
   color: #f6fff8;
@@ -150,9 +159,9 @@ export const GUIDE_STYLES = `
   background: transparent;
   color: var(--muted);
   border-radius: 0;
-  padding: 12px 8px;
+  padding: 9px 8px;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
   font-family: inherit;
 }
@@ -165,19 +174,77 @@ export const GUIDE_STYLES = `
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 14px 16px 16px;
+  padding: 12px 14px 14px;
 }
 
 .opg-shell.chat-mode .opg-body {
   padding-bottom: 8px;
 }
 
+.opg-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 2px 8px;
+}
+.opg-empty[hidden] {
+  display: none !important;
+}
+.opg-empty-title {
+  font-family: "Iowan Old Style", "Palatino Linotype", "Songti SC", Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink);
+}
+.opg-empty-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.opg-empty-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 500;
+}
+.opg-empty-n {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #f6fff8;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+.opg-empty-pin {
+  margin-top: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(27, 67, 50, 0.08);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .opg-summary {
-  margin: 0 0 14px;
-  font-size: 16px;
+  margin: 0 0 12px;
+  font-size: 15px;
   font-weight: 500;
   color: #24362c;
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
 .opg-list {
@@ -446,6 +513,67 @@ export const GUIDE_STYLES = `
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
+}
+
+.opg-dialog-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(20, 35, 26, 0.48);
+  backdrop-filter: blur(5px);
+}
+.opg-dialog-layer[data-fixed="1"] {
+  position: fixed;
+}
+.opg-dialog {
+  width: min(100%, 340px);
+  padding: 18px 18px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(120% 90% at 0% 0%, #d8f3dc 0%, transparent 55%),
+    linear-gradient(165deg, #f7f5f0 0%, #e7ebe6 100%);
+  box-shadow: 0 18px 44px rgba(20, 35, 26, 0.28);
+  color: var(--ink);
+}
+.opg-dialog-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 10px;
+  border-radius: 9px;
+  background: rgba(196, 123, 43, 0.16);
+  color: #8a4b10;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+.opg-dialog-title {
+  margin: 0 0 8px;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Songti SC", Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.opg-dialog-body {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+.opg-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 `;
 

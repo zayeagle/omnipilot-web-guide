@@ -18,9 +18,7 @@ export function rulesFallbackFeatures(
 } {
   const zh = locale === 'zh';
   return {
-    pageSummary: zh
-      ? '规则分析（AI 不可用或密钥未解锁）'
-      : 'Rules-only analysis (AI unavailable or locked)',
+    pageSummary: zh ? '规则分析' : 'Rules-only analysis',
     features: candidates.slice(0, 30).map((c) => {
       const label = (c.text || c.ariaLabel || c.kind || (zh ? '控件' : 'Control')).slice(
         0,

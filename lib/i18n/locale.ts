@@ -64,6 +64,10 @@ export type GuideStrings = {
   dragHint: string;
   tabGuide: string;
   tabChat: string;
+  emptyTitle: string;
+  emptyStepAnalyze: string;
+  emptyStepAsk: string;
+  pinTip: string;
 };
 
 const EN: GuideStrings = {
@@ -104,6 +108,11 @@ const EN: GuideStrings = {
   dragHint: 'Drag',
   tabGuide: 'Guide',
   tabChat: 'Ask',
+  emptyTitle: 'Get oriented on this page',
+  emptyStepAnalyze: 'Tap Analyze to list actions and start a guided tour.',
+  emptyStepAsk: 'Switch to Ask to chat about how to use the page.',
+  pinTip:
+    'Icon lives in the Extensions (puzzle) menu. Pin it to the toolbar yourself if you want — Chrome does not let extensions choose the default.',
 };
 
 const ZH: GuideStrings = {
@@ -144,6 +153,11 @@ const ZH: GuideStrings = {
   dragHint: '拖动',
   tabGuide: '看一看',
   tabChat: '问一问',
+  emptyTitle: '先了解一下这个页面',
+  emptyStepAnalyze: '点「分析页面」识别可操作项，再开始分步引导。',
+  emptyStepAsk: '切到「问一问」可用对话询问本页怎么用。',
+  pinTip:
+    '扩展图标在右上角「扩展程序」（拼图）菜单里。需要时常显时请自行点图钉固定到工具栏——浏览器默认是否固定由 Chrome/Edge 决定，扩展无法改。',
 };
 
 export function guideStrings(locale: UiLocale): GuideStrings {

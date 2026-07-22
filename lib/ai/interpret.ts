@@ -24,6 +24,53 @@ function extractJson(text: string): unknown {
   return JSON.parse(body.slice(start, end + 1));
 }
 
+/** True when the HTTP body looks like OpenAI-style SSE (`data: {...}`). */
+export function looksLikeSseBody(bodyText: string): boolean {
+  const t = bodyText.trimStart();
+  return t.startsWith('data:') || /^data:\s/m.test(bodyText);
+}
+
+/**
+ * Extract assistant message text from a chat/completions response body.
+ * Supports non-stream JSON and SSE (some gateways ignore stream:false).
+ */
+export function completionContentFromBody(bodyText: string): string {
+  const trimmed = bodyText.trim();
+  if (!trimmed) throw new Error('empty model response');
+
+  if (looksLikeSseBody(trimmed)) {
+    let answer = '';
+    for (const line of trimmed.split(/\r?\n/)) {
+      const row = line.trim();
+      if (!row.startsWith('data:')) continue;
+      const data = row.slice(5).trim();
+      if (!data || data === '[DONE]') continue;
+      try {
+        const json = JSON.parse(data) as {
+          choices?: Array<{
+            delta?: { content?: string };
+            message?: { content?: string };
+          }>;
+        };
+        const choice = json.choices?.[0];
+        const piece =
+          choice?.delta?.content || choice?.message?.content || '';
+        if (piece) answer += piece;
+      } catch {
+        /* skip bad SSE chunk */
+      }
+    }
+    answer = answer.trim();
+    if (!answer) throw new Error('empty SSE model response');
+    return answer;
+  }
+
+  const data = JSON.parse(trimmed) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  return (data.choices?.[0]?.message?.content ?? '').trim();
+}
+
 export function parseInterpretPayload(
   raw: unknown,
   candidates: Candidate[],
@@ -108,6 +155,7 @@ CRITICAL: Write pageSummary, name, description, and every howTo step entirely in
       body: JSON.stringify({
         model: config.chatModel,
         temperature: 0.2,
+        stream: false,
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: user },
@@ -123,10 +171,8 @@ CRITICAL: Write pageSummary, name, description, and every howTo step entirely in
         ),
       );
     }
-    const data = JSON.parse(bodyText) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = data.choices?.[0]?.message?.content ?? '';
+    const content = completionContentFromBody(bodyText);
+    if (!content) throw new Error('empty model response');
     const parsed = extractJson(content);
     return parseInterpretPayload(parsed, candidates, locale);
   } catch (e) {
@@ -137,7 +183,7 @@ CRITICAL: Write pageSummary, name, description, and every howTo step entirely in
     const fallback = rulesFallbackFeatures(candidates, locale);
     return {
       ...fallback,
-      pageSummary: `${fallback.pageSummary}: ${msg}`,
+      pageSummary: msg,
       degraded: true,
     };
   } finally {

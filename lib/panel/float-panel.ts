@@ -11,8 +11,8 @@ const MSG_SOURCE = 'omnipilot-web-guide';
 
 const MIN_W = 320;
 const MIN_H = 360;
-const DEFAULT_W = 420;
-const DEFAULT_H = 640;
+const DEFAULT_W = 400;
+const DEFAULT_H = 560;
 const MARGIN = 12;
 /** Sit below typical site mastheads so header icons stay visible. */
 const TOP = 80;

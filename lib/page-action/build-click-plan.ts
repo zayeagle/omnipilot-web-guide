@@ -86,25 +86,39 @@ export function buildClickPlan(opts: {
     steps.push({ kind: 'click', uid, label: label.trim() || uid });
   };
 
-  // Primary: best single live-scan match → 1-step chain
+  // Explicit multi-step wording only — otherwise prefer a single clear click.
+  const wantsMulti =
+    /(步骤|依次|然后|接着|再点|一步步|按顺序|step\s*by\s*step|and\s+then|then\s+click)/i.test(
+      goal,
+    );
+
+  // Primary: best live-scan match
   const ranked = rankClickTargets(goal, opts.candidates, 5);
-  if (ranked[0]) {
-    pushClick(ranked[0].uid, ranked[0].label);
+  const primary = ranked[0];
+  if (primary && !wantsMulti) {
+    // Clear single control in the goal → do not expand unrelated howTo steps.
+    return {
+      goal,
+      steps: [{ kind: 'click', uid: primary.uid, label: primary.label }],
+    };
+  }
+  if (primary) {
+    pushClick(primary.uid, primary.label);
   }
 
-  // Optional extra steps from analyzed howTo (multi-step needs)
+  // Optional extra steps from analyzed howTo (only when multi-step requested
+  // or when there is still no primary match).
   let best: { f: PlanFeature; score: number } | null = null;
   for (const f of opts.features) {
     const score = scoreFeature(goal, f);
     if (score <= 0) continue;
     if (!best || score > best.score) best = { f, score };
   }
-  if (best) {
+  if (best && (wantsMulti || !steps.length)) {
     for (const line of best.f.howTo || []) {
       const hit = matchClickTarget(line, opts.candidates);
       if (hit) pushClick(hit.uid, hit.label);
     }
-    // If we still have nothing, use the feature control as the only step
     if (!steps.length) pushClick(best.f.uid, best.f.name);
   }
 

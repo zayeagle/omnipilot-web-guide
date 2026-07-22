@@ -2,9 +2,10 @@
 branch: main
 last_phase: 5
 last_task_group: null
-timestamp: 2026-07-19T11:56:30+08:00
-complexity: M
+timestamp: 2026-07-22T17:07:00+08:00
+complexity: S
 status: ready_for_exit
+autopilot: true
 security_audit_status: PASS
 test_gate: PASS
 platform: cursor
@@ -21,15 +22,15 @@ pending_decision:
 ---
 
 ## 会话目标
-MVP 全流程完成（Phase 0–5）。
+修复分析页 AI 响应被当成 JSON 解析 SSE 导致的降级错误。
 
-## 关键决策
-- deploy_autonomy: conservative
-- deploy default: binary（extension pack）；docker/k8s = N/A stubs
-- 未执行生产/商店提交（需 B.0）
+## Key Decisions
+- autopilot_default: phase0_s_fastpath → `fast` (via `/od auto`)
+- Fix: `completionContentFromBody` + explicit `stream: false`
+- security_audit: PASS · test_gate: PASS (49 tests)
 
 ## 执行进度
 - Phase 0–5: ✅
 
 ## 恢复指引
-`/od ps` 提交推送；`/od board` 看板；`/od x` 结束。
+重新加载扩展后点「分析页面」验证；`/od ps` 提交；`/od x` 结束。

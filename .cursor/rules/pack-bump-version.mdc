@@ -1,0 +1,12 @@
+---
+description: Repackaging the extension must bump the version by default
+alwaysApply: true
+---
+
+# Extension pack → version bump
+
+When packaging / 打包 this extension (zip, pack, deploy binary, or “打一下包”):
+
+1. **Default**: bump patch first, then build zips. Use `npm run pack` or `npm run pack:all` (not bare `npm run zip`).
+2. **Do not** ship a rebuild under the same `package.json` version unless the user explicitly says `--no-bump` / 不要升版本.
+3. After pack, mention the new version (e.g. `0.1.x`) and zip paths under `.output/`.

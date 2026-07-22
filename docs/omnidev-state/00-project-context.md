@@ -37,3 +37,6 @@
 - Never put API keys in content script world; never persist passphrase for auto-unlock
 - Phase4 gates: vitest + playwright smoke + assert:content; full `--load-extension` E2E deferred
 - Phase5: deploy default `binary` (ci+pack); docker/k8s N/A stubs for extension packaging
+- Chrome/Edge toolbar pin is user/browser-controlled; extensions have no API for default-unpinned install
+- Float empty-state should guide Analyze/Ask and hide tour controls until features exist
+- Some chat gateways return SSE even when `stream:false`; interpret must parse `data:` lines like chat.ts

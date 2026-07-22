@@ -425,9 +425,15 @@ export default defineBackground(() => {
           const resolved = await resolveAiConfigForRequest();
           if (!resolved.ok) {
             const fallback = rulesFallbackFeatures(candidates, locale);
+            const why =
+              locale === 'zh'
+                ? resolved.reason === 'locked'
+                  ? '保险库已锁定，请先在设置中解锁'
+                  : '请先在设置中配置 API Key'
+                : resolved.error;
             sendResponse({
               ok: true,
-              pageSummary: `${fallback.pageSummary} (${resolved.reason})`,
+              pageSummary: why,
               features: fallback.features,
               degraded: true,
             });

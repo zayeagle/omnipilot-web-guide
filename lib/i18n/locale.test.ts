@@ -12,4 +12,12 @@ describe('locale', () => {
     expect(guideStrings('zh').analyze).toBe('分析页面');
     expect(guideStrings('en').analyze).toBe('Analyze');
   });
+
+  it('empty-state and pin tip strings exist', () => {
+    const zh = guideStrings('zh');
+    const en = guideStrings('en');
+    expect(zh.emptyTitle.length).toBeGreaterThan(0);
+    expect(zh.pinTip).toContain('图钉');
+    expect(en.pinTip.toLowerCase()).toContain('pin');
+  });
 });

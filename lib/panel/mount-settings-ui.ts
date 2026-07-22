@@ -33,7 +33,10 @@ type SettingsCopy = {
   allowClick: string;
   allowClickHint: string;
   allowClickRisk: string;
+  allowClickConfirmTitle: string;
   allowClickConfirm: string;
+  confirmEnable: string;
+  cancel: string;
   save: string;
   unlock: string;
   lock: string;
@@ -73,8 +76,11 @@ function copy(locale: UiLocale): SettingsCopy {
         '默认关闭。勾选并保存后，「看一看 / 问一问」才会显示代点击相关按钮。',
       allowClickRisk:
         '风险提醒：开启后，扩展可在你确认的操作链路中代为点击当前网页控件（含播放、跳转进度等）。误确认可能导致非预期操作。请只在可信页面使用，并仔细核对每一步再点确认。仍不会代填表单或改写页面内容。',
+      allowClickConfirmTitle: '开启代为点击？',
       allowClickConfirm:
-        '即将开启「代为点击」。\n\n扩展可在你确认后点击当前网页上的控件，误操作可能影响页面状态。\n\n仅建议在可信页面使用。确定开启并保存吗？',
+        '开启后，扩展可在你确认操作链路后点击当前网页控件（播放、跳转等）。误确认可能影响页面状态。\n\n请仅在可信页面使用，并仔细核对每一步。',
+      confirmEnable: '开启并保存',
+      cancel: '取消',
       save: '保存',
       unlock: '解开（开始用 AI）',
       lock: '收起密钥（暂停 AI）',
@@ -110,8 +116,11 @@ function copy(locale: UiLocale): SettingsCopy {
       'Off by default. When enabled and saved, click-action buttons appear in Guide / Ask.',
     allowClickRisk:
       'Risk: when enabled, this extension may click controls on the current page (play, seek, etc.) after you confirm a step chain. A mistaken confirm can cause unintended actions. Use only on trusted pages and review every step before confirming. It still will not fill forms or rewrite page content.',
+    allowClickConfirmTitle: 'Enable assisted click?',
     allowClickConfirm:
-      'You are about to enable assisted click.\n\nAfter you confirm a plan, the extension can click controls on the current page. Mistakes may change page state.\n\nOnly enable on trusted pages. Continue and save?',
+      'When enabled, the extension can click page controls (play, seek, etc.) after you confirm a step chain. A mistaken confirm may change page state.\n\nUse only on trusted pages and review every step.',
+    confirmEnable: 'Enable & save',
+    cancel: 'Cancel',
     save: 'Save',
     unlock: 'Unlock (enable AI)',
     lock: 'Lock key (pause AI)',
@@ -125,6 +134,60 @@ function copy(locale: UiLocale): SettingsCopy {
     statusLine: (s) =>
       `Passphrase encryption: ${s.hardeningEnabled ? 'on' : 'off'} · Stored key: ${s.hasCredential ? 'yes' : 'no'} · AI ready: ${s.unlocked ? 'yes' : 'no'}`,
   };
+}
+
+function confirmThemed(
+  host: HTMLElement,
+  opts: {
+    title: string;
+    body: string;
+    confirmLabel: string;
+    cancelLabel: string;
+  },
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const anchor =
+      host.closest<HTMLElement>('.opg-settings-pane') ||
+      host.closest<HTMLElement>('.opg-shell') ||
+      host;
+    const layer = document.createElement('div');
+    layer.className = 'opg-dialog-layer';
+    const pos = getComputedStyle(anchor).position;
+    if (pos === 'static' || pos === '') {
+      layer.dataset.fixed = '1';
+    }
+    layer.innerHTML = `
+      <div class="opg-dialog" role="dialog" aria-modal="true">
+        <div class="opg-dialog-badge" aria-hidden="true">!</div>
+        <div class="opg-dialog-title"></div>
+        <div class="opg-dialog-body"></div>
+        <div class="opg-dialog-actions">
+          <button type="button" class="opg-btn ghost" data-role="dlg-cancel"></button>
+          <button type="button" class="opg-btn" data-role="dlg-ok"></button>
+        </div>
+      </div>
+    `;
+    layer.querySelector('.opg-dialog-title')!.textContent = opts.title;
+    layer.querySelector('.opg-dialog-body')!.textContent = opts.body;
+    const cancelBtn = layer.querySelector<HTMLButtonElement>(
+      '[data-role="dlg-cancel"]',
+    )!;
+    const okBtn = layer.querySelector<HTMLButtonElement>('[data-role="dlg-ok"]')!;
+    cancelBtn.textContent = opts.cancelLabel;
+    okBtn.textContent = opts.confirmLabel;
+
+    const finish = (ok: boolean) => {
+      layer.remove();
+      resolve(ok);
+    };
+    cancelBtn.addEventListener('click', () => finish(false));
+    okBtn.addEventListener('click', () => finish(true));
+    layer.addEventListener('click', (e) => {
+      if (e.target === layer) finish(false);
+    });
+    anchor.appendChild(layer);
+    okBtn.focus();
+  });
 }
 
 export function mountSettingsUi(
@@ -326,8 +389,14 @@ export function mountSettingsUi(
     void (async () => {
       try {
         const enablingClick = allowClickEl.checked && !savedAllowClick;
-        if (enablingClick && !window.confirm(t.allowClickConfirm)) {
-          return;
+        if (enablingClick) {
+          const ok = await confirmThemed(root, {
+            title: t.allowClickConfirmTitle,
+            body: t.allowClickConfirm,
+            confirmLabel: t.confirmEnable,
+            cancelLabel: t.cancel,
+          });
+          if (!ok) return;
         }
         const pass = passEl.value;
         const hardening = hardeningEl.checked;
@@ -388,6 +457,11 @@ export function mountSettingsUi(
 
   return {
     destroy() {
+      for (const layer of document.querySelectorAll('.opg-dialog-layer')) {
+        if (root.contains(layer) || layer.contains(root) || root.parentElement?.contains(layer)) {
+          layer.remove();
+        }
+      }
       root.remove();
     },
     reload: load,

@@ -14,7 +14,7 @@
 | **Core** | Rule scan · AI interpret · Floating panel · Spotlight tour |
 | **Providers** | OpenAI, DeepSeek, Anthropic (via OpenRouter), OpenRouter, Custom |
 | **Security** | Optional passphrase vault · SW-only unlock · secrets never in content scripts |
-| **Version** | **v0.1.24** |
+| **Version** | **v0.1.26** |
 
 ---
 
@@ -78,7 +78,9 @@ npm run dev:firefox  # Firefox
 
 Load the unpacked extension from `.output/chrome-mv3` (or Firefox output) in the browser.
 
-Click the toolbar icon to open a **floating, draggable** guide panel on the page (Analyze + Ask chat). UI chrome and AI answers follow the browser/system language (zh / en).
+Click the extension icon to open a **floating, draggable** guide panel on the page (Analyze + Ask chat). UI chrome and AI answers follow the browser/system language (zh / en).
+
+**Toolbar pin**: Whether the icon stays on the toolbar is controlled by Chrome / Edge and the user — extensions **cannot** set “unpinned by default” after install. Open the Extensions (puzzle) menu and pin manually if you want it always visible.
 
 **Settings**: gear icon in the panel (or extension options) → provider → API key → optional passphrase encryption → optional assisted click.
 
@@ -102,6 +104,9 @@ node scripts/capture-readme-shots.mjs
 | `npm run test:e2e` | Playwright smoke |
 | `npm run assert:content` | Fail if content bundle looks like it embeds secrets |
 | `npm run ci` | test + build + assert + firefox build |
+| `npm run bump` | Bump patch version (`package.json` + lock + README) |
+| `npm run pack` | **Default: bump patch then zip** Chrome + Firefox |
+| `npm run pack:all` | Icons + test + bump + zip (use `--no-bump` only when asked) |
 | `npm run deploy` | CI + pack Chrome/Firefox zips (see `deploy/README.md`) |
 | `npm run deploy:dry-run` | Print pack steps only |
 
