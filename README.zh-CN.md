@@ -14,7 +14,7 @@
 | **能力** | 规则扫描 · AI 解读 · 浮层面板 · 高亮导览 |
 | **模型** | OpenAI / DeepSeek / Anthropic(经 OpenRouter) / OpenRouter / 自定义 |
 | **安全** | 可选口令保险库 · 仅 SW 解锁 · 密钥不进 content script |
-| **版本** | **v0.1.26** |
+| **版本** | **v0.1.31** |
 
 ---
 

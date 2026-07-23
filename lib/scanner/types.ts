@@ -33,10 +33,19 @@ export type ScanOptions = {
   maxCandidates?: number;
   minSize?: number;
   preferViewport?: boolean;
+  /** Walk open shadow roots (default true). */
+  scanShadow?: boolean;
+  /** Include same-origin iframe documents (default true). */
+  scanIframes?: boolean;
+  /** Max iframe nest depth (default 2). */
+  maxIframeDepth?: number;
 };
 
 export const DEFAULT_SCAN_OPTIONS: Required<ScanOptions> = {
-  maxCandidates: 60,
+  maxCandidates: 120,
   minSize: 8,
   preferViewport: true,
+  scanShadow: true,
+  scanIframes: true,
+  maxIframeDepth: 2,
 };

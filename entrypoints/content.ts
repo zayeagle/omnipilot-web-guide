@@ -62,6 +62,8 @@ export default defineContentScript({
         lastByUid = new Map(
           rescan.elements.map((e, i) => [rescan.candidates[i]!.uid, e] as const),
         );
+        rescan.elements.length = 0;
+        rescan.candidates.length = 0;
         el = lastByUid.get(uid);
       }
       return el instanceof HTMLElement ? el : null;
@@ -152,14 +154,20 @@ export default defineContentScript({
           lastByUid = new Map(
             elements.map((el, i) => [candidates[i]!.uid, el] as const),
           );
+          // Snapshot for the message; drop working arrays after respond.
+          const payload = candidates.slice();
           sendResponse({
             ok: true,
-            candidates,
+            candidates: payload,
             meta: {
               title: document.title,
               url: location.href,
             },
           });
+          // Do not mutate `payload` after sendResponse (may still be cloning).
+          // Drop scan working arrays; uid→element map is kept for guide/click.
+          elements.length = 0;
+          candidates.length = 0;
           return;
         }
 

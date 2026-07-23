@@ -49,6 +49,8 @@ export async function getSettings(): Promise<ExtensionSettings> {
       ...DEFAULT_PERMISSIONS,
       // Opt-in only: anything other than explicit true stays off.
       allowAssistedClick: value.permissions?.allowAssistedClick === true,
+      // Default ON unless explicitly disabled (legacy settings omit the key).
+      allowScreenshotAssist: value.permissions?.allowScreenshotAssist !== false,
     },
   };
 }
@@ -69,6 +71,9 @@ export async function saveAiConfig(opts: SaveAiOpts): Promise<ExtensionSettings>
     allowAssistedClick: opts.permissions
       ? opts.permissions.allowAssistedClick === true
       : current.permissions.allowAssistedClick === true,
+    allowScreenshotAssist: opts.permissions
+      ? opts.permissions.allowScreenshotAssist !== false
+      : current.permissions.allowScreenshotAssist !== false,
   };
   const mergedKey = resolveApiKeyInput(opts.aiConfig.apiKey, current.aiConfig.apiKey);
   const nextConfig: AiConfig = {

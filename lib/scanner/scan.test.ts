@@ -71,4 +71,45 @@ describe('scanDocument', () => {
     expect(elements[0]?.hasAttribute('data-opg-uid')).toBe(false);
     expect(doc.querySelectorAll('[data-opg-uid]').length).toBe(0);
   });
+
+  it('finds library tabs/buttons without ARIA roles', () => {
+    const doc = mount(`
+      <aside class="ant-layout-sider"><a href="#nav">侧栏</a></aside>
+      <main class="ant-layout-content">
+        <div class="ant-tabs-tab">MySQL</div>
+        <div class="ant-tabs-tab">Redis</div>
+        <button class="ant-btn">新增</button>
+      </main>
+    `);
+    const { candidates } = scanDocument(doc);
+    expect(candidates.some((c) => c.text.includes('MySQL'))).toBe(true);
+    expect(candidates.some((c) => c.text.includes('Redis'))).toBe(true);
+    expect(candidates.some((c) => c.text.includes('新增'))).toBe(true);
+  });
+
+  it('prefers main-content controls over chrome nav when capped', () => {
+    const nav = Array.from(
+      { length: 40 },
+      (_, i) => `<a href="#n${i}">Nav${i}</a>`,
+    ).join('');
+    const doc = mount(`
+      <nav>${nav}</nav>
+      <main class="ant-layout-content">
+        <div class="ant-tabs-tab">基础配置</div>
+        <button class="ant-btn">生效配置</button>
+      </main>
+    `);
+    const { candidates } = scanDocument(doc, { maxCandidates: 20 });
+    expect(candidates.some((c) => c.text.includes('基础配置'))).toBe(true);
+    expect(candidates.some((c) => c.text.includes('生效配置'))).toBe(true);
+  });
+
+  it('scans open shadow roots', () => {
+    document.body.innerHTML = `<div id="host"></div>`;
+    const host = document.querySelector('#host')!;
+    const root = host.attachShadow({ mode: 'open' });
+    root.innerHTML = `<button>ShadowSave</button>`;
+    const { candidates } = scanDocument(document);
+    expect(candidates.some((c) => c.text.includes('ShadowSave'))).toBe(true);
+  });
 });

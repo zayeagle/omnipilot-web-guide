@@ -2,7 +2,7 @@
   "name": "omnipilot-web-guide",
   "description": "All-in-one page action guidance assistant — rules + AI, visual step-by-step help (Chrome & Firefox)",
   "private": true,
-  "version": "0.1.26",
+  "version": "0.1.31",
   "type": "module",
   "scripts": {
     "icons": "node scripts/gen-icons.mjs",

@@ -17,8 +17,9 @@ export function cacheKey(
   originPath: string,
   fingerprint: string,
   locale = 'en',
+  model = '',
 ): string {
-  return `${originPath}::${locale}::${fingerprint}`;
+  return `${originPath}::${locale}::${model}::${fingerprint}`;
 }
 
 export function structureFingerprint(

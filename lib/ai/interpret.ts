@@ -1,5 +1,12 @@
 import type { UiLocale } from '../i18n/locale';
 import { localeLabel } from '../i18n/locale';
+import { disposeAnalyzeRunTemps } from '../analyze/dispose-ephemeral';
+import {
+  looksLikeImageApiError,
+  releaseScreenshot,
+  scrubImageContentParts,
+  type ScreenshotRef,
+} from '../capture/screenshot';
 import type { AiConfig } from '../storage';
 import type { Candidate } from '../scanner';
 import { toAiSummary } from '../scanner';
@@ -13,6 +20,17 @@ export type InterpretResult = {
   features: GuideFeature[];
   degraded: boolean;
 };
+
+export type InterpretOptions = {
+  /** JPEG/PNG data URL; omitted for text-only models. Cleared after use. */
+  screenshotDataUrl?: string | null;
+  /** Preferred: mutable ref so Analyze can wipe the payload in finally. */
+  screenshotRef?: ScreenshotRef;
+};
+
+type TextContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } };
 
 function extractJson(text: string): unknown {
   const trimmed = text.trim();
@@ -126,43 +144,49 @@ export function parseInterpretPayload(
   return { pageSummary, features, degraded: false };
 }
 
-export async function interpretWithAi(
-  config: AiConfig,
-  candidates: Candidate[],
-  meta: { title: string; url: string },
-  locale: UiLocale = 'en',
-): Promise<InterpretResult> {
-  const summary = toAiSummary(candidates, meta);
-  const system = `You analyze webpage UI controls for end-user guidance.
-Return ONLY JSON:
-{"pageSummary":"string","features":[{"uid":"c0","name":"","description":"","howTo":["step1","step2"]}]}
-Rules: use only provided uids; howTo 2-5 short steps; prefer primary actions; max 20 features.
-CRITICAL: Write pageSummary, name, description, and every howTo step entirely in ${localeLabel(locale)}.`;
+export function buildInterpretUserContent(
+  summaryJson: string,
+  screenshotDataUrl: string | null | undefined,
+  locale: UiLocale,
+): string | TextContentPart[] {
+  if (!screenshotDataUrl) return summaryJson;
+  const hint =
+    locale === 'zh'
+      ? '下方 JSON 为扫描到的控件摘要。请结合视口截图理解布局、标签页与主操作；features 只能使用 JSON 中已有的 uid。'
+      : 'JSON below lists scanned controls. Use the viewport screenshot for layout, tabs, and primary actions; features must use only uids from the JSON.';
+  return [
+    { type: 'text', text: `${hint}\n\n${summaryJson}` },
+    { type: 'image_url', image_url: { url: screenshotDataUrl } },
+  ];
+}
 
-  const user = JSON.stringify(summary);
+async function requestCompletion(
+  config: AiConfig,
+  system: string,
+  userContent: string | TextContentPart[],
+  signal: AbortSignal,
+): Promise<string> {
   const base = config.baseUrl.replace(/\/+$/, '');
   const url = `${base}/chat/completions`;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const res = await fetch(url, {
+    method: 'POST',
+    signal,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: config.chatModel,
+      temperature: 0.2,
+      stream: false,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: userContent },
+      ],
+    }),
+  });
+  let bodyText = await res.text();
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.chatModel,
-        temperature: 0.2,
-        stream: false,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user },
-        ],
-      }),
-    });
-    const bodyText = await res.text();
     if (!res.ok) {
       throw new Error(
         sanitizeErrorMessage(
@@ -173,7 +197,78 @@ CRITICAL: Write pageSummary, name, description, and every howTo step entirely in
     }
     const content = completionContentFromBody(bodyText);
     if (!content) throw new Error('empty model response');
-    const parsed = extractJson(content);
+    return content;
+  } finally {
+    // Drop raw HTTP body (may be large SSE) as soon as content is extracted.
+    bodyText = '';
+  }
+}
+
+export async function interpretWithAi(
+  config: AiConfig,
+  candidates: Candidate[],
+  meta: { title: string; url: string },
+  locale: UiLocale = 'en',
+  options?: InterpretOptions,
+): Promise<InterpretResult> {
+  let summary: ReturnType<typeof toAiSummary> | null = toAiSummary(
+    candidates,
+    meta,
+  );
+  const system = `You analyze webpage UI controls for end-user guidance.
+Return ONLY JSON:
+{"pageSummary":"string","features":[{"uid":"c0","name":"","description":"","howTo":["step1","step2"]}]}
+Rules: use only provided uids; howTo 2-5 short steps; prefer primary actions; max 20 features.
+CRITICAL: Write pageSummary, name, description, and every howTo step entirely in ${localeLabel(locale)}.`;
+
+  const summaryJson = {
+    value: JSON.stringify(summary) as string | null,
+  };
+  // Object form is no longer needed once serialized.
+  if (summary) summary.candidates = [];
+  summary = null;
+  const modelText = { value: null as string | null };
+  const shotRef: ScreenshotRef = options?.screenshotRef ?? {
+    dataUrl: options?.screenshotDataUrl?.trim() || null,
+  };
+  // Drop any loose copy on options immediately; work only via shotRef.
+  if (options) options.screenshotDataUrl = null;
+
+  let userContent: string | TextContentPart[] = buildInterpretUserContent(
+    summaryJson.value || '',
+    shotRef.dataUrl,
+    locale,
+  );
+  const hadShot = !!shotRef.dataUrl;
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  try {
+    try {
+      modelText.value = await requestCompletion(
+        config,
+        system,
+        userContent,
+        ctrl.signal,
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // Non-multimodal / gateway rejection: retry text-only once.
+      if (hadShot && looksLikeImageApiError(msg)) {
+        scrubImageContentParts(userContent);
+        releaseScreenshot(shotRef);
+        userContent = summaryJson.value || '';
+        modelText.value = await requestCompletion(
+          config,
+          system,
+          userContent,
+          ctrl.signal,
+        );
+      } else {
+        throw e;
+      }
+    }
+    const parsed = extractJson(modelText.value || '');
     return parseInterpretPayload(parsed, candidates, locale);
   } catch (e) {
     const msg = sanitizeErrorMessage(
@@ -188,5 +283,15 @@ CRITICAL: Write pageSummary, name, description, and every howTo step entirely in
     };
   } finally {
     clearTimeout(timer);
+    disposeAnalyzeRunTemps({
+      screenshotRef: shotRef,
+      userContent,
+      summaryJson,
+      modelText,
+    });
+    // Caller may still hold screenshotRef — ensure dataUrl is gone.
+    releaseScreenshot(options?.screenshotRef);
+    if (options) options.screenshotDataUrl = null;
+    userContent = '';
   }
 }

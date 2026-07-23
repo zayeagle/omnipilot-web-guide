@@ -14,7 +14,7 @@
 | **Core** | Rule scan · AI interpret · Floating panel · Spotlight tour |
 | **Providers** | OpenAI, DeepSeek, Anthropic (via OpenRouter), OpenRouter, Custom |
 | **Security** | Optional passphrase vault · SW-only unlock · secrets never in content scripts |
-| **Version** | **v0.1.26** |
+| **Version** | **v0.1.31** |
 
 ---
 

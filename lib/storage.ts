@@ -16,10 +16,15 @@ export type SecurityState = {
   rememberedPassphrase?: string;
 };
 
-/** Opt-in host-page actions. All flags default OFF. */
+/** Opt-in host-page actions. Click defaults OFF; screenshot assist defaults ON. */
 export type PagePermissions = {
   /** When true, OmniPilot may click a resolved control on the user's behalf. */
   allowAssistedClick: boolean;
+  /**
+   * When true (default), Analyze may capture the visible tab and attach it
+   * for known multimodal models. Text-only models never receive images.
+   */
+  allowScreenshotAssist: boolean;
 };
 
 export interface ExtensionSettings {
@@ -45,6 +50,7 @@ export const DEFAULT_SECURITY: SecurityState = {
 
 export const DEFAULT_PERMISSIONS: PagePermissions = {
   allowAssistedClick: false,
+  allowScreenshotAssist: true,
 };
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {

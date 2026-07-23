@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Candidate } from '../scanner';
 import {
+  buildInterpretUserContent,
   completionContentFromBody,
   looksLikeSseBody,
   parseInterpretPayload,
@@ -57,6 +58,27 @@ describe('parseInterpretPayload', () => {
     );
     expect(r.degraded).toBe(true);
     expect(r.features.every((f) => f.uid !== 'c99')).toBe(true);
+  });
+});
+
+describe('buildInterpretUserContent', () => {
+  it('returns plain text without screenshot', () => {
+    expect(buildInterpretUserContent('{"a":1}', null, 'en')).toBe('{"a":1}');
+  });
+
+  it('returns multimodal parts with screenshot', () => {
+    const parts = buildInterpretUserContent(
+      '{"a":1}',
+      'data:image/jpeg;base64,abc',
+      'zh',
+    );
+    expect(Array.isArray(parts)).toBe(true);
+    if (!Array.isArray(parts)) return;
+    expect(parts[0]?.type).toBe('text');
+    expect(parts[1]).toEqual({
+      type: 'image_url',
+      image_url: { url: 'data:image/jpeg;base64,abc' },
+    });
   });
 });
 

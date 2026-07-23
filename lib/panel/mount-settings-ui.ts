@@ -35,6 +35,8 @@ type SettingsCopy = {
   allowClickRisk: string;
   allowClickConfirmTitle: string;
   allowClickConfirm: string;
+  allowScreenshot: string;
+  allowScreenshotHint: string;
   confirmEnable: string;
   cancel: string;
   save: string;
@@ -79,6 +81,9 @@ function copy(locale: UiLocale): SettingsCopy {
       allowClickConfirmTitle: '开启代为点击？',
       allowClickConfirm:
         '开启后，扩展可在你确认操作链路后点击当前网页控件（播放、跳转等）。误确认可能影响页面状态。\n\n请仅在可信页面使用，并仔细核对每一步。',
+      allowScreenshot: '分析时截取可见区域辅助识图（多模态）',
+      allowScreenshotHint:
+        '默认开启。仅对已知支持看图的模型发送截图；纯文本模型（如 deepseek-chat）不会发图，仍用页面结构分析。',
       confirmEnable: '开启并保存',
       cancel: '取消',
       save: '保存',
@@ -119,6 +124,9 @@ function copy(locale: UiLocale): SettingsCopy {
     allowClickConfirmTitle: 'Enable assisted click?',
     allowClickConfirm:
       'When enabled, the extension can click page controls (play, seek, etc.) after you confirm a step chain. A mistaken confirm may change page state.\n\nUse only on trusted pages and review every step.',
+    allowScreenshot: 'Capture viewport to assist Analyze (vision models)',
+    allowScreenshotHint:
+      'On by default. Screenshots are sent only for known multimodal models; text-only models (e.g. deepseek-chat) never receive images and keep DOM analysis.',
     confirmEnable: 'Enable & save',
     cancel: 'Cancel',
     save: 'Save',
@@ -231,6 +239,11 @@ export function mountSettingsUi(
     <div class="opg-settings-note">${t.allowClickHint}</div>
     <div class="opg-settings-risk" data-role="allowClickRisk" hidden>${t.allowClickRisk}</div>
     <label class="opg-settings-row">
+      <input data-role="allowScreenshot" type="checkbox" />
+      <span>${t.allowScreenshot}</span>
+    </label>
+    <div class="opg-settings-note">${t.allowScreenshotHint}</div>
+    <label class="opg-settings-row">
       <input data-role="hardening" type="checkbox" />
       <span>${t.hardening}</span>
     </label>
@@ -271,6 +284,9 @@ export function mountSettingsUi(
   )!;
   const allowClickRiskEl = root.querySelector<HTMLElement>(
     '[data-role="allowClickRisk"]',
+  )!;
+  const allowScreenshotEl = root.querySelector<HTMLInputElement>(
+    '[data-role="allowScreenshot"]',
   )!;
   const hardeningEl = root.querySelector<HTMLInputElement>(
     '[data-role="hardening"]',
@@ -369,6 +385,8 @@ export function mountSettingsUi(
     modelEl.value = settings.aiConfig.chatModel;
     savedAllowClick = settings.permissions.allowAssistedClick === true;
     allowClickEl.checked = savedAllowClick;
+    allowScreenshotEl.checked =
+      settings.permissions.allowScreenshotAssist !== false;
     syncAllowClickRisk();
     hardeningEl.checked = settings.security.hardeningEnabled;
     fillModels(providerEl.value);
@@ -411,6 +429,7 @@ export function mountSettingsUi(
           passphrase: pass,
           permissions: {
             allowAssistedClick: allowClickEl.checked,
+            allowScreenshotAssist: allowScreenshotEl.checked,
           },
         });
         if (hardening && pass.trim()) {

@@ -13,11 +13,25 @@ import {
 import { interpretWithAi } from '../lib/ai/interpret';
 import { rulesFallbackFeatures } from '../lib/ai/rules-fallback';
 import {
+  appendAssistNote,
+  shouldAttachScreenshot,
+  visionAssistNote,
+  visionSkipReason,
+} from '../lib/ai/vision-capability';
+import {
   cacheKey,
   getCached,
   setCached,
   structureFingerprint,
 } from '../lib/cache';
+import {
+  disposeAnalyzeRunTemps,
+  type AnalyzeRunTemps,
+} from '../lib/analyze/dispose-ephemeral';
+import {
+  captureVisibleTabJpeg,
+  type ScreenshotRef,
+} from '../lib/capture/screenshot';
 import { normalizeLocale, type UiLocale } from '../lib/i18n/locale';
 import {
   isExtensionPageSender,
@@ -384,75 +398,127 @@ export default defineBackground(() => {
             });
             return;
           }
-          const scan = (await browser.tabs.sendMessage(tab.id, {
-            type: 'content.scan',
-          })) as {
-            ok: boolean;
-            candidates?: Candidate[];
-            meta?: { title: string; url: string };
-            error?: string;
-          };
-          if (!scan?.ok) {
-            sendResponse({ ok: false, error: scan?.error || 'Scan failed' });
-            return;
-          }
-          const candidates = scan.candidates || [];
-          const meta = scan.meta || {
-            title: tab.title || '',
-            url: tab.url || '',
-          };
 
-          let path = meta.url;
+          const temps: AnalyzeRunTemps = {
+            screenshotRef: { dataUrl: null } satisfies ScreenshotRef,
+            candidates: null,
+            scan: null,
+          };
           try {
-            const u = new URL(meta.url);
-            path = u.origin + u.pathname;
-          } catch {
-            /* keep */
-          }
-          const fp = structureFingerprint(candidates);
-          const key = cacheKey(path, fp, locale);
-          const cached = await getCached(key);
-          if (cached) {
+            const scan = (await browser.tabs.sendMessage(tab.id, {
+              type: 'content.scan',
+            })) as {
+              ok: boolean;
+              candidates?: Candidate[];
+              meta?: { title: string; url: string };
+              error?: string;
+            };
+            temps.scan = scan;
+            if (!scan?.ok) {
+              sendResponse({ ok: false, error: scan?.error || 'Scan failed' });
+              return;
+            }
+            const candidates = scan.candidates || [];
+            temps.candidates = candidates;
+            const meta = scan.meta || {
+              title: tab.title || '',
+              url: tab.url || '',
+            };
+
+            let path = meta.url;
+            try {
+              const u = new URL(meta.url);
+              path = u.origin + u.pathname;
+            } catch {
+              /* keep */
+            }
+            const fp = structureFingerprint(candidates);
+            const settingsPeek = await getSettings();
+            const key = cacheKey(
+              path,
+              fp,
+              locale,
+              settingsPeek.aiConfig.chatModel || '',
+            );
+            const cached = await getCached(key);
+            if (cached) {
+              sendResponse({
+                ok: true,
+                pageSummary: cached.pageSummary,
+                features: cached.features,
+                degraded: cached.degraded,
+              });
+              return;
+            }
+
+            const resolved = await resolveAiConfigForRequest();
+            if (!resolved.ok) {
+              const fallback = rulesFallbackFeatures(candidates, locale);
+              const why =
+                locale === 'zh'
+                  ? resolved.reason === 'locked'
+                    ? '保险库已锁定，请先在设置中解锁'
+                    : '请先在设置中配置 API Key'
+                  : resolved.error;
+              sendResponse({
+                ok: true,
+                pageSummary: why,
+                features: fallback.features,
+                degraded: true,
+              });
+              return;
+            }
+
+            const ai = resolved.settings.aiConfig;
+            const shotEnabled =
+              resolved.settings.permissions.allowScreenshotAssist !== false;
+            const screenshotRef = temps.screenshotRef!;
+            let assistNote: string | null = null;
+
+            if (
+              shouldAttachScreenshot({
+                model: ai.chatModel,
+                enabled: shotEnabled,
+              })
+            ) {
+              screenshotRef.dataUrl = await captureVisibleTabJpeg({
+                windowId: tab.windowId,
+                quality: 55,
+              });
+              if (!screenshotRef.dataUrl) {
+                assistNote = visionAssistNote(locale, 'capture_failed');
+              }
+            } else {
+              assistNote = visionAssistNote(
+                locale,
+                visionSkipReason(ai.chatModel, shotEnabled),
+              );
+            }
+
+            const result = await interpretWithAi(
+              ai,
+              candidates,
+              meta,
+              locale,
+              { screenshotRef },
+            );
+            const pageSummary = appendAssistNote(
+              result.pageSummary,
+              assistNote,
+            );
+            if (!result.degraded) {
+              await setCached(key, { ...result, pageSummary });
+            }
             sendResponse({
               ok: true,
-              pageSummary: cached.pageSummary,
-              features: cached.features,
-              degraded: cached.degraded,
+              pageSummary,
+              features: result.features,
+              degraded: result.degraded,
             });
-            return;
+          } finally {
+            // Drop scan copies, screenshots, and other Analyze ephemerals.
+            disposeAnalyzeRunTemps(temps);
           }
-
-          const resolved = await resolveAiConfigForRequest();
-          if (!resolved.ok) {
-            const fallback = rulesFallbackFeatures(candidates, locale);
-            const why =
-              locale === 'zh'
-                ? resolved.reason === 'locked'
-                  ? '保险库已锁定，请先在设置中解锁'
-                  : '请先在设置中配置 API Key'
-                : resolved.error;
-            sendResponse({
-              ok: true,
-              pageSummary: why,
-              features: fallback.features,
-              degraded: true,
-            });
-            return;
-          }
-
-          const result = await interpretWithAi(
-            resolved.settings.aiConfig,
-            candidates,
-            meta,
-            locale,
-          );
-          if (!result.degraded) await setCached(key, result);
-          sendResponse({
-            ok: true,
-            pageSummary: result.pageSummary,
-            features: result.features,
-            degraded: result.degraded,
-          });
           return;
         }
 
